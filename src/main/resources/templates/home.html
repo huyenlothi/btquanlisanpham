@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+    <button type="button" class="btn btn-info btn-lg" data-toggle="modal" data-target="#myModal">Create Product </button>
+    <div class="modal fade" id="myModal" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Create Product </h4>
+                </div>
+                <div class="modal-body">
+                    <form >
+                        <label >Product Name</label>
+                        <input type="text" id="pName"><br/>
+                        <label >Price</label>
+                        <input type="text" id="price"><br/>
+                        <label >Quantity</label>
+                        <input type="text" id="quantity"><br/>
+                        <label >Category</label>
+                        <select name="category" id="category"  >
+                            <option th:each="category:${categorys}" th:value="${category.getId()}" th:text="${category.getName()}"></option>
+                        </select><br/>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal" value="create product" onclick="addProduct()">Create</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <h1>List Product</h1>
+    <table id="productList" border="1px" class="table">
+        <tr>
+            <th>Id</th>
+            <th>Name</th>
+            <th>Price</th>
+            <th>Quantity</th>
+            <th>Category</th>
+            <th>Edit</th>
+            <th>Delete</th>
+        </tr>
+        <th:block th:each="product: ${listProduct}">
+            <tr>
+                <td th:text="${product.getId()}"></td>
+                <td th:text="${product.name}"></td>
+                <td th:text="${product.price}"></td>
+                <td th:text="${product.quantity}"></td>
+                <td th:text="${product.category.name}"></td>
+                <td><a th:href="@{/product/edit/__${product.getId()}__}">Edit</a></td>
+                <td><a th:href="${product.getId()}" onclick="deleteProduct(this)" >Delete</a></td>
+            </tr>
+        </th:block>
+    </table>
+</div>
+<script>
+    function addProduct(){
+        let newName = $(`#pName`).val();
+        let newPrice = $(`#price`).val();
+        let newQuantity= $(`#quantity`).val();
+        let newCategory= $(`#category`).val();
+
+        let json= {
+            name : newName,
+            price: newPrice,
+            quantity: newQuantity,
+            category: {
+                id: newCategory
+            }
+        };
+        $.ajax({
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            type:'POST',
+            dataType:'text',
+            data: JSON.stringify(json),
+            //tên API
+            url:'http://localhost:8080/product',
+            //xử lý khi thành công
+            success: function () {
+                debugger
+                successHandler();
+            },
+            error: function () {
+                successHandler();
+            },
+            complete: function (){
+                successHandler();
+            }
+        });
+        //chặn sự kiện mặc định của thẻ
+        event.preventDefault();
+
+    }
+
+    function deleteProduct(e){
+        let id= e.getAttribute("href");
+        $.ajax({
+            type:"DELETE",
+            url: "/product/"+ id,
+            success: function (){
+                successHandler();
+            }
+        })
+        event.preventDefault();
+    }
+
+    function successHandler(){
+        $.ajax({
+            type: "GET",
+            url: "/product",
+            success: function (list){
+                let content='    <tr>\n '+'' +
+                    '<td>Id</td>\n'+
+                    '<td>Name</td>'+
+                    '<td>Price</td>'+
+                    '<td>Quantity</td>'+
+                    '<td>Category</td>'+
+                    '<td>Edit</td>'+
+                    '<td>Delete</td>'+
+                    '</tr>';
+                for (let i=0; i<list.length; i++){
+                    content += getProduct(list[i])
+                }
+                document.getElementById('productList').innerHTML= content;
+            }
+        })
+    }
+    function getProduct(product){
+        return `<tr><td>${product.id}</td>`+
+            `<td>${product.name}</td>`+
+            `<td>${product.price}</td>` +
+            `<td>${product.quantity}</td>`+
+            `<td>${product.category.name}</td>`+
+            `<td><a href="@{/product/edit/${product.id}}">Edit</a></td>`+
+            `<td><a href="${product.id}" onclick="deleteProduct(this)" >Delete</a></td>`+
+            `</tr>`
+    }
+
+</script>
+</body>
+</html>
